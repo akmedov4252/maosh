@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="tg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>English Course – Payments</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#fff; --ink:#1c2333; --muted:#6b7280; --line:#e5e7eb;
+  --brand:#2f5bea; --brand-d:#2347c0; --ok:#15803d; --ok-bg:#e8f7ee;
+  --bad:#b91c1c; --bad-bg:#fde8e8; --warn-bg:#fff4d6; --warn:#92400e;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45}
+.hidden{display:none!important}
+button{font:inherit;cursor:pointer}
+input,textarea{font:inherit}
+
+/* top bar */
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 20px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.top h1{font-size:18px;margin:0}
+.langs{display:flex;gap:4px}
+.langs button{border:1px solid var(--line);background:#fff;padding:6px 12px;border-radius:8px;font-weight:600;color:var(--muted)}
+.langs button.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+.linkbtn{background:none;border:none;color:var(--muted);text-decoration:underline;padding:6px}
+
+/* login */
+#login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:20px}
+.login-card{background:var(--card);padding:32px 28px;border-radius:16px;box-shadow:0 10px 30px rgba(30,40,80,.08);width:100%;max-width:360px;text-align:center}
+.login-card h2{margin:0 0 6px}
+.login-card p{margin:0 0 18px;color:var(--muted)}
+.login-card input{width:100%;padding:12px 14px;font-size:22px;letter-spacing:8px;text-align:center;border:2px solid var(--line);border-radius:10px;outline:none}
+.login-card input:focus{border-color:var(--brand)}
+.err{color:var(--bad);min-height:22px;margin-top:8px;font-size:14px}
+
+.btn{background:var(--brand);color:#fff;border:none;padding:11px 18px;border-radius:10px;font-weight:600}
+.btn:hover{background:var(--brand-d)}
+.btn.block{width:100%;margin-top:12px}
+.btn.ghost{background:#eef1fb;color:var(--brand)}
+.btn.ghost:hover{background:#dfe5fa}
+.btn.danger{background:var(--bad-bg);color:var(--bad)}
+.btn.small{padding:7px 12px;font-size:14px}
+
+/* layout */
+main{max-width:920px;margin:0 auto;padding:20px;display:grid;gap:18px}
+.card{background:var(--card);border-radius:14px;padding:18px 20px;box-shadow:0 2px 10px rgba(30,40,80,.05)}
+.card h3{margin:0 0 12px;font-size:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:180px}
+.field label{font-size:13px;color:var(--muted);font-weight:600}
+.field input,.field textarea{padding:10px 12px;border:1px solid var(--line);border-radius:10px;outline:none;width:100%}
+.field input:focus,.field textarea:focus{border-color:var(--brand)}
+.notice{background:var(--warn-bg);color:var(--warn);padding:10px 14px;border-radius:10px;font-size:14px;margin-bottom:12px}
+
+/* table */
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+td.num{width:44px;color:var(--muted)}
+td.act{width:60px;text-align:right}
+tr.unpaid td{background:var(--bad-bg);color:var(--bad);font-weight:600}
+tr.paid td{background:#fff}
+.status{border:none;padding:7px 14px;border-radius:999px;font-weight:700;min-width:120px}
+.status.paid{background:var(--ok-bg);color:var(--ok)}
+.status.unpaid{background:var(--bad);color:#fff}
+.x{background:none;border:none;color:var(--muted);font-size:18px;padding:4px 8px;border-radius:6px}
+.x:hover{background:#fff;color:var(--bad)}
+.empty{text-align:center;color:var(--muted);padding:24px}
+
+/* summary */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:#f7f8fc;border-radius:12px;padding:12px 14px}
+.stat small{display:block;color:var(--muted);font-size:12px;font-weight:600;margin-bottom:2px}
+.stat b{font-size:20px}
+.stat.ok b{color:var(--ok)} .stat.bad b{color:var(--bad)}
+.alert{margin-top:12px;padding:12px 14px;border-radius:10px;font-size:14px}
+.alert.bad{background:var(--bad-bg);color:var(--bad)}
+.alert.ok{background:var(--ok-bg);color:var(--ok)}
+
+/* print */
+#printArea{display:none}
+@media print{
+  @page{size:A4;margin:16mm}
+  body{background:#fff}
+  body > *:not(#printArea){display:none!important}
+  #printArea{display:block}
+  #printArea h2{margin:0 0 4px;font-size:20px}
+  #printArea .date{color:#555;margin-bottom:12px;font-size:13px}
+  #printArea table{border:1px solid #999}
+  #printArea th,#printArea td{border:1px solid #999;padding:7px 10px;font-size:13px}
+  #printArea th{background:#eee;color:#000}
+  #printArea tr.unpaid td{background:#fde8e8!important;color:#b91c1c!important;font-weight:700;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #printArea tr.paid td{color:#15803d;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #printArea tr{page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<section id="login">
+  <div class="langs" data-langs></div>
+  <form class="login-card" id="loginForm">
+    <h2 data-i="loginTitle"></h2>
+    <p data-i="loginHint"></p>
+    <input id="code" type="password" inputmode="numeric" autocomplete="off" maxlength="12" autofocus>
+    <div class="err" id="loginErr"></div>
+    <button class="btn block" type="submit" data-i="enter"></button>
+  </form>
+</section>
+
+<!-- APP -->
+<div id="app" class="hidden">
+  <header class="top">
+    <h1 data-i="title"></h1>
+    <div style="display:flex;gap:10px;align-items:center">
+      <div class="langs" data-langs></div>
+      <button class="linkbtn" id="logout" data-i="logout"></button>
+    </div>
+  </header>
+
+  <main>
+    <!-- add students -->
+    <section class="card">
+      <h3 data-i="addTitle"></h3>
+      <div class="row">
+        <div class="field" style="flex:3">
+          <label for="names" data-i="namesLabel"></label>
+          <textarea id="names" rows="2" data-iph="namesPh"></textarea>
+        </div>
+        <button class="btn" id="addBtn" data-i="add"></button>
+      </div>
+    </section>
+
+    <!-- list -->
+    <section class="card">
+      <h3><span data-i="listTitle"></span></h3>
+      <div id="tableWrap"></div>
+    </section>
+
+    <!-- price -->
+    <section class="card">
+      <h3 data-i="priceTitle"></h3>
+      <div class="notice" id="salaryNotice"></div>
+      <div class="row">
+        <div class="field" style="max-width:260px">
+          <label for="price" data-i="priceLabel"></label>
+          <input id="price" type="number" min="0" step="1" inputmode="decimal" placeholder="50">
+        </div>
+        <button class="btn ghost" id="autoPrice" data-i="autoPrice"></button>
+      </div>
+      <div id="priceAlert"></div>
+    </section>
+
+    <!-- summary -->
+    <section class="card">
+      <h3 data-i="summaryTitle"></h3>
+      <div class="stats" id="stats"></div>
+    </section>
+
+    <section class="card" style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn" id="pdfBtn" data-i="pdf"></button>
+      <button class="btn danger small" id="resetPaid" data-i="resetPaid"></button>
+    </section>
+  </main>
+</div>
+
+<!-- printable table -->
+<div id="printArea"></div>
+
+<script>
+(function(){
+"use strict";
+
+const ACCESS_CODE = "1234";
+const TEACHER_SALARY = 2500;   // сомонӣ — бояд кам нашавад
+const STORE = "engCourse.v1";
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+/* ---------- translations ---------- */
+const T = {
+  tg:{
+    code:"TJ",
+    loginTitle:"Хуш омадед", loginHint:"Рамзро ворид кунед", enter:"Ворид шудан", wrong:"Рамз нодуруст аст",
+    title:"Пардохти курси забони англисӣ", logout:"Баромадан",
+    addTitle:"Иловаи хонандагон", namesLabel:"Ном (ҳар ном дар сатри алоҳида)", namesPh:"Масалан: Фарҳод Раҳимов", add:"Илова кардан",
+    listTitle:"Рӯйхати хонандагон", colName:"Ном", colStatus:"Ҳолат", paid:"Супорид", unpaid:"Насупорид", noStudents:"Ҳоло хонандае нест. Номҳоро дар боло илова кунед.",
+    priceTitle:"Нарх ва маоши омӯзгор", priceLabel:"Нархи курс барои як нафар (сомонӣ)", autoPrice:"Нархи тавсияшуда",
+    salaryNotice:(s)=>`Маоши омӯзгор ${s} сомонӣ аст ва набояд кам шавад. Нарх бояд чунон бошад, ки ҷамъи маблағ аз ${s} сомонӣ кам набошад.`,
+    needRecommended:(n,p)=>`Барои ${n} нафар ҳар кас камаш ${p} сомонӣ диҳад.`,
+    belowSalary:(tot,s,min)=>`Диққат! Бо ин нарх ҷамъи маблағ ${tot} сомонӣ мешавад, ки аз ${s} кам аст. Нархи ҳадди ақал: ${min} сомонӣ барои як нафар.`,
+    okSalary:(tot,s)=>`Ҷамъи маблағ ${tot} сомонӣ — маоши омӯзгор (${s}) таъмин аст.`,
+    noStudentsPrice:"Аввал хонандагонро илова кунед.",
+    summaryTitle:"Ҳисоб", total:"Ҳамагӣ хонанда", paidCount:"Супоридаанд", unpaidCount:"Насупоридаанд",
+    collected:"Ҷамъ шуд", toCollect:"Аз насупоридаҳо мондааст", expected:"Ҳамагӣ бояд ҷамъ шавад", shortfall:"То маоши омӯзгор намерасад", salary:"Маоши омӯзгор",
+    som:"сомонӣ", pdf:"Боргирии PDF (ҷадвали номҳо)", resetPaid:"Ҳамаро «Насупорид» кардан",
+    del:"Нест кардан", edit:"Таҳрир", editPrompt:"Номро тағйир диҳед:", confirmReset:"Ҳолати ҳамаро ба «Насупорид» баргардонем?", confirmDel:"Ин хонандаро нест кунем?",
+    pdfTitle:"Ҷадвали пардохти курси забони англисӣ", date:"Сана", noPdf:"Аввал хонандагонро илова кунед."
+  },
+  ru:{
+    code:"RU",
+    loginTitle:"Добро пожаловать", loginHint:"Введите код доступа", enter:"Войти", wrong:"Неверный код",
+    title:"Оплата курса английского языка", logout:"Выйти",
+    addTitle:"Добавить учеников", namesLabel:"Имя (каждое имя с новой строки)", namesPh:"Например: Фарход Рахимов", add:"Добавить",
+    listTitle:"Список учеников", colName:"Имя", colStatus:"Статус", paid:"Оплатил", unpaid:"Не оплатил", noStudents:"Пока нет учеников. Добавьте имена выше.",
+    priceTitle:"Цена и зарплата учителя", priceLabel:"Цена курса на одного человека (сомони)", autoPrice:"Рекомендуемая цена",
+    salaryNotice:(s)=>`Зарплата учителя — ${s} сомони, и она не должна уменьшаться. Цена должна быть такой, чтобы общая сумма была не меньше ${s} сомони.`,
+    needRecommended:(n,p)=>`Для ${n} чел. с каждого нужно минимум ${p} сомони.`,
+    belowSalary:(tot,s,min)=>`Внимание! При такой цене сумма составит ${tot} сомони — это меньше ${s}. Минимальная цена: ${min} сомони с человека.`,
+    okSalary:(tot,s)=>`Общая сумма ${tot} сомони — зарплата учителя (${s}) обеспечена.`,
+    noStudentsPrice:"Сначала добавьте учеников.",
+    summaryTitle:"Расчёт", total:"Всего учеников", paidCount:"Оплатили", unpaidCount:"Не оплатили",
+    collected:"Собрано", toCollect:"Осталось собрать с неоплативших", expected:"Всего нужно собрать", shortfall:"Не хватает до зарплаты", salary:"Зарплата учителя",
+    som:"сомони", pdf:"Скачать PDF (таблица имён)", resetPaid:"Сбросить всех на «Не оплатил»",
+    del:"Удалить", edit:"Изменить", editPrompt:"Измените имя:", confirmReset:"Сбросить статус всех на «Не оплатил»?", confirmDel:"Удалить этого ученика?",
+    pdfTitle:"Таблица оплаты курса английского языка", date:"Дата", noPdf:"Сначала добавьте учеников."
+  },
+  en:{
+    code:"EN",
+    loginTitle:"Welcome", loginHint:"Enter the access code", enter:"Sign in", wrong:"Wrong code",
+    title:"English Course Payments", logout:"Log out",
+    addTitle:"Add students", namesLabel:"Name (one name per line)", namesPh:"e.g. Farhod Rahimov", add:"Add",
+    listTitle:"Student list", colName:"Name", colStatus:"Status", paid:"Paid", unpaid:"Not paid", noStudents:"No students yet. Add names above.",
+    priceTitle:"Price & teacher's salary", priceLabel:"Course price per person (somoni)", autoPrice:"Recommended price",
+    salaryNotice:(s)=>`The teacher's salary is ${s} somoni and must not be reduced. The price must be set so the total is at least ${s} somoni.`,
+    needRecommended:(n,p)=>`For ${n} students, each should pay at least ${p} somoni.`,
+    belowSalary:(tot,s,min)=>`Warning! At this price the total is ${tot} somoni, which is below ${s}. Minimum price: ${min} somoni per person.`,
+    okSalary:(tot,s)=>`Total ${tot} somoni — the teacher's salary (${s}) is covered.`,
+    noStudentsPrice:"Add students first.",
+    summaryTitle:"Summary", total:"Total students", paidCount:"Paid", unpaidCount:"Not paid",
+    collected:"Collected", toCollect:"Still to collect from unpaid", expected:"Total to be collected", shortfall:"Short of teacher's salary", salary:"Teacher's salary",
+    som:"somoni", pdf:"Download PDF (names table)", resetPaid:"Reset everyone to “Not paid”",
+    del:"Delete", edit:"Edit", editPrompt:"Edit the name:", confirmReset:"Reset everyone to “Not paid”?", confirmDel:"Delete this student?",
+    pdfTitle:"English Course Payment Table", date:"Date", noPdf:"Add students first."
+  }
+};
+const LANG_NAMES = {tg:"Тоҷикӣ", ru:"Русский", en:"English"};
+
+const DEFAULT_NAMES = ["Салимзода Г.", "Тағозода М.", "Неъматзода А.", "Ёрматзода Ф.", "Миршамсзода Д.", "Расулзода Б.", "Абдуллозода Б.", "Досов Р.", "Шафиинзода У.", "Тошева Р.", "Турсунова М.", "Ҳайитзода С.", "Имонзода И.", "Одизода Б.", "Чаматзода И.", "Қаҳҳоров А.", "Шарипов Д.", "Шарифзода Ҷ.", "Ғафурзода М.", "Содиқов И.", "Сайфулозода У.", "Файзулозода А.", "Шарифзода Ҳ.", "Расулзода Ҷ.", "Додов Р.", "Раҷабзода А.", "Чупаев О.", "Хуҷаназарзода М.", "Давронзода А.", "Сафарзода Ю.", "Сайдализода Ҷ.", "Чӯраҳонзода Ғ.", "Назаров А.", "Урунзода У.", "Ҳайдаров С.", "Бобокалонов М.", "Иброҳимзода А.", "Абдиев Э.", "Ҳамидов М.", "Усмонзода Ф.", "Ибодулозода Ғ.", "Раҳимзода Ш.", "Намозода С.", "Золотова Д.", "Нусратулозода С.", "Хушвақтзода А.", "Мақсудзода С."];
+/* ---------- state ---------- */
+let state = {lang:"tg", price:"", students:[]};
+try{
+  const s = JSON.parse(localStorage.getItem(STORE)||"null");
+  if(s){ state = Object.assign(state, s); }
+}catch(e){}
+if(!T[state.lang]) state.lang="tg";
+if(!state.seeded && !state.students.length){
+  state.students = DEFAULT_NAMES.map(n=>({id:uid(),name:n,paid:false}));
+  state.seeded = true;
+  try{ localStorage.setItem(STORE, JSON.stringify(state)); }catch(e){}
+}
+
+function save(){ try{ localStorage.setItem(STORE, JSON.stringify(state)); }catch(e){} }
+const $ = (id)=>document.getElementById(id);
+const t = (k)=>T[state.lang][k];
+const esc = (s)=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = (n)=>{ const r=Math.round(n*100)/100; return r.toLocaleString("en-US",{maximumFractionDigits:2}).replace(/,/g," "); };
+
+
+/* ---------- language ---------- */
+function renderLangs(){
+  document.querySelectorAll("[data-langs]").forEach(box=>{
+    box.innerHTML = Object.keys(T).map(l=>
+      `<button type="button" data-l="${l}" class="${l===state.lang?"active":""}" title="${LANG_NAMES[l]}">${T[l].code}</button>`).join("");
+  });
+}
+document.addEventListener("click",e=>{
+  const b = e.target.closest("[data-l]");
+  if(b){ state.lang=b.dataset.l; save(); applyLang(); }
+});
+function applyLang(){
+  document.documentElement.lang = state.lang==="tg"?"tg":state.lang;
+  document.querySelectorAll("[data-i]").forEach(el=>{ el.textContent = t(el.dataset.i); });
+  document.querySelectorAll("[data-iph]").forEach(el=>{ el.placeholder = t(el.dataset.iph); });
+  $("salaryNotice").textContent = t("salaryNotice")(TEACHER_SALARY);
+  renderLangs();
+  render();
+}
+
+/* ---------- login ---------- */
+function showApp(){
+  $("login").classList.add("hidden");
+  $("app").classList.remove("hidden");
+  render();
+}
+$("loginForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  if($("code").value.trim()===ACCESS_CODE){
+    try{ sessionStorage.setItem("engAuth","1"); }catch(_){}
+    $("loginErr").textContent=""; $("code").value="";
+    showApp();
+  }else{
+    $("loginErr").textContent=t("wrong");
+    $("code").select();
+  }
+});
+$("logout").addEventListener("click",()=>{
+  try{ sessionStorage.removeItem("engAuth"); }catch(_){}
+  $("app").classList.add("hidden"); $("login").classList.remove("hidden"); $("code").focus();
+});
+
+/* ---------- students ---------- */
+$("addBtn").addEventListener("click",()=>{
+  const lines = $("names").value.split(/\r?\n|,|;/).map(s=>s.trim()).filter(Boolean);
+  lines.forEach(n=>state.students.push({id:uid(), name:n, paid:false}));
+  $("names").value=""; save(); render();
+});
+$("names").addEventListener("keydown",e=>{
+  if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); $("addBtn").click(); }
+});
+
+function sorted(){
+  // Насупоридаҳо дар аввал, баъд бо тартиби алифбо
+  return state.students.slice().sort((a,b)=>{
+    if(a.paid!==b.paid) return a.paid?1:-1;
+    return a.name.localeCompare(b.name, state.lang==="en"?"en":"ru");
+  });
+}
+
+$("tableWrap").addEventListener("click",e=>{
+  const tog = e.target.closest("[data-toggle]");
+  const del = e.target.closest("[data-del]");
+  const ed = e.target.closest("[data-edit]");
+  if(ed){
+    const s = state.students.find(x=>x.id===ed.dataset.edit);
+    if(s){ const v = prompt(t("editPrompt"), s.name); if(v!==null && v.trim()){ s.name=v.trim(); save(); render(); } }
+  }else if(tog){
+    const s = state.students.find(x=>x.id===tog.dataset.toggle);
+    if(s){ s.paid=!s.paid; save(); render(); }
+  }else if(del){
+    if(confirm(t("confirmDel"))){
+      state.students = state.students.filter(x=>x.id!==del.dataset.del);
+      save(); render();
+    }
+  }
+});
+$("resetPaid").addEventListener("click",()=>{
+  if(state.students.length && confirm(t("confirmReset"))){
+    state.students.forEach(s=>s.paid=false); save(); render();
+  }
+});
+
+/* ---------- price ---------- */
+$("price").addEventListener("input",()=>{ state.price=$("price").value; save(); renderCalc(); });
+$("autoPrice").addEventListener("click",()=>{
+  const n = state.students.length;
+  if(!n) return;
+  state.price = String(Math.ceil(TEACHER_SALARY/n));
+  $("price").value = state.price; save(); renderCalc();
+});
+
+/* ---------- render ---------- */
+function renderTable(){
+  const list = sorted();
+  if(!list.length){ $("tableWrap").innerHTML = `<div class="empty">${esc(t("noStudents"))}</div>`; return; }
+  $("tableWrap").innerHTML = `<table>
+    <thead><tr><th>#</th><th>${esc(t("colName"))}</th><th>${esc(t("colStatus"))}</th><th></th></tr></thead>
+    <tbody>${list.map((s,i)=>`
+      <tr class="${s.paid?"paid":"unpaid"}">
+        <td class="num">${i+1}</td>
+        <td>${esc(s.name)}</td>
+        <td><button class="status ${s.paid?"paid":"unpaid"}" data-toggle="${s.id}">${esc(s.paid?t("paid"):t("unpaid"))}</button></td>
+        <td class="act" style="width:90px"><button class="x" data-edit="${s.id}" title="${esc(t("edit"))}">✎</button><button class="x" data-del="${s.id}" title="${esc(t("del"))}">✕</button></td>
+      </tr>`).join("")}
+    </tbody></table>`;
+}
+
+function calc(){
+  const n = state.students.length;
+  const paidN = state.students.filter(s=>s.paid).length;
+  const unpaidN = n-paidN;
+  const price = parseFloat(state.price)||0;
+  const min = n? Math.ceil(TEACHER_SALARY/n):0;
+  const collected = paidN*price;
+  const toCollect = unpaidN*price;
+  const expected = n*price;
+  const shortfall = Math.max(0, TEACHER_SALARY-collected);
+  return {n,paidN,unpaidN,price,min,collected,toCollect,expected,shortfall};
+}
+
+function renderCalc(){
+  const c = calc(), som = t("som");
+  // price alert
+  let html="";
+  if(!c.n){
+    html = `<div class="alert bad">${esc(t("noStudentsPrice"))}</div>`;
+  }else{
+    html += `<div style="margin-top:10px;color:var(--muted);font-size:14px">${esc(t("needRecommended")(c.n,c.min))}</div>`;
+    if(c.price>0){
+      if(c.expected < TEACHER_SALARY)
+        html += `<div class="alert bad">${esc(t("belowSalary")(fmt(c.expected),TEACHER_SALARY,c.min))}</div>`;
+      else
+        html += `<div class="alert ok">${esc(t("okSalary")(fmt(c.expected),TEACHER_SALARY))}</div>`;
+    }
+  }
+  $("priceAlert").innerHTML = html;
+
+  const stat=(label,val,cls="")=>`<div class="stat ${cls}"><small>${esc(label)}</small><b>${val}</b></div>`;
+  $("stats").innerHTML =
+    stat(t("total"), c.n) +
+    stat(t("paidCount"), c.paidN, "ok") +
+    stat(t("unpaidCount"), c.unpaidN, c.unpaidN?"bad":"") +
+    stat(t("collected"), `${fmt(c.collected)} ${esc(som)}`, "ok") +
+    stat(t("toCollect"), `${fmt(c.toCollect)} ${esc(som)}`, c.toCollect?"bad":"") +
+    stat(t("expected"), `${fmt(c.expected)} ${esc(som)}`) +
+    stat(t("salary"), `${fmt(TEACHER_SALARY)} ${esc(som)}`) +
+    stat(t("shortfall"), `${fmt(c.shortfall)} ${esc(som)}`, c.shortfall?"bad":"ok");
+}
+
+function render(){
+  if($("app").classList.contains("hidden")) return;
+  $("price").value = state.price;
+  renderTable(); renderCalc();
+}
+
+/* ---------- PDF (print only the names table) ---------- */
+$("pdfBtn").addEventListener("click",()=>{
+  if(!state.students.length){ alert(t("noPdf")); return; }
+  const list = sorted();
+  const d = new Date();
+  const date = String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0")+"."+d.getFullYear();
+  $("printArea").innerHTML = `
+    <h2>${esc(t("pdfTitle"))}</h2>
+    <div class="date">${esc(t("date"))}: ${date}</div>
+    <table>
+      <thead><tr><th style="width:40px">#</th><th>${esc(t("colName"))}</th><th style="width:130px">${esc(t("colStatus"))}</th></tr></thead>
+      <tbody>${list.map((s,i)=>`<tr class="${s.paid?"paid":"unpaid"}"><td>${i+1}</td><td>${esc(s.name)}</td><td>${esc(s.paid?t("paid"):t("unpaid"))}</td></tr>`).join("")}</tbody>
+    </table>`;
+  const oldTitle = document.title;
+  document.title = "payments-"+date;
+  window.print();
+  document.title = oldTitle;
+});
+
+/* ---------- init ---------- */
+applyLang();
+let authed=false; try{ authed = sessionStorage.getItem("engAuth")==="1"; }catch(_){}
+if(authed) showApp();
+})();
+</script>
+</body>
+</html>
